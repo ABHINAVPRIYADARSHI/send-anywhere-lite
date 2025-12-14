@@ -6,6 +6,10 @@ import { Server } from 'socket.io';
 const app = express();
 app.use(cors());
 
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
+
 const server = http.createServer(app);
 
 const io = new Server(server, {
