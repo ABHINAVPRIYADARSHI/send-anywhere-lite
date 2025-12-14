@@ -223,6 +223,79 @@ body {
   margin-bottom: 30px;
 }
 
+.files-list {
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 12px;
+  margin-top: 16px;
+  margin-bottom: 20px;
+}
+
+.files-list-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+  margin-top: 0;
+}
+
+.file-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  border-left: 3px solid #667eea;
+  gap: 10px;
+}
+
+.file-item-name {
+  font-weight: 500;
+  color: #333;
+  flex: 1;
+  word-break: break-word;
+}
+
+.file-item-size {
+  font-size: 0.85rem;
+  color: #666;
+  white-space: nowrap;
+}
+
+.btn-delete-file {
+  background: #fee;
+  color: #c33;
+  border: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.btn-delete-file:hover {
+  background: #c33;
+  color: white;
+  transform: scale(1.1);
+}
+
+.files-total-size {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e0e0e0;
+  font-weight: 600;
+  color: #667eea;
+  font-size: 0.95rem;
+}
+
 .file-input-label {
   display: block;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -556,5 +629,37 @@ body {
     margin-top: 12px;
     padding: 10px 14px;
     font-size: 0.9rem;
+  }
+
+  .files-list {
+    padding: 12px;
+    margin-top: 12px;
+    margin-bottom: 16px;
+  }
+
+  .file-item {
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+  }
+
+  .file-item-name {
+    font-size: 0.9rem;
+  }
+
+  .file-item-size {
+    font-size: 0.8rem;
+  }
+
+  .btn-delete-file {
+    width: 26px;
+    height: 26px;
+    font-size: 0.9rem;
+  }
+
+  .files-total-size {
+    font-size: 0.9rem;
+    margin-top: 10px;
+    padding-top: 10px;
   }
 }

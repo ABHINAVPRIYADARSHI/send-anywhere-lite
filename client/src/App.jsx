@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import JSZip from "jszip";
 import { initSignaling } from "./Signaling";
 import { createWebRTCConnection, sendFileOverRTC } from "./webrtc";
 
@@ -29,7 +30,7 @@ const statusColors = {
 export default function App() {
   const [mode, setMode] = useState(null);
   const [code, setCode] = useState("");
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [status, setStatus] = useState("idle");
   const [progress, setProgress] = useState(0);
   const [rtc, setRTC] = useState(null);
@@ -53,6 +54,39 @@ export default function App() {
   function showToast(message) {
     setToast(message);
     setTimeout(() => setToast(null), 3000);
+  }
+
+  function handleFileSelect(e) {
+    const selectedFiles = Array.from(e.target.files);
+    setFiles((prevFiles) => [...prevFiles, ...selectedFiles]);
+    clearError();
+  }
+
+  function deleteFile(index) {
+    setFiles((prevFiles) => prevFiles.filter((_, i) => i !== index));
+  }
+
+  async function createZipFile() {
+    if (files.length === 0) {
+      setError("Please select at least one file");
+      return null;
+    }
+
+    try {
+      const zip = new JSZip();
+      
+      for (const file of files) {
+        const arrayBuffer = await file.arrayBuffer();
+        zip.file(file.name, arrayBuffer);
+      }
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const zipFile = new File([zipBlob], "files.zip", { type: "application/zip" });
+      return zipFile;
+    } catch (err) {
+      setError("Error creating zip file: " + err.message);
+      return null;
+    }
   }
 
   async function startSend() {
@@ -211,18 +245,23 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (isReadyToSend && file && rtc && mode === "send") {
-      performFileSend(file, rtc);
+    if (isReadyToSend && files.length > 0 && rtc && mode === "send") {
+      (async () => {
+        const zipFile = await createZipFile();
+        if (zipFile) {
+          await performFileSend(zipFile, rtc);
+        }
+      })();
       setIsReadyToSend(false);
     }
-  }, [isReadyToSend, file, rtc, mode]);
+  }, [isReadyToSend, files, rtc, mode]);
 
   function handleReset() {
     if (timeoutId) clearTimeout(timeoutId);
     if (timerIntervalId) clearInterval(timerIntervalId);
     setMode(null);
     setCode("");
-    setFile(null);
+    setFiles([]);
     setStatus("idle");
     setProgress(0);
     setError("");
@@ -286,23 +325,48 @@ export default function App() {
                 <label className="file-input-label">
                   <input
                     type="file"
-                    onChange={(e) => {
-                      setFile(e.target.files[0]);
-                      clearError();
-                    }}
+                    multiple
+                    onChange={handleFileSelect}
                     className="file-input"
                   />
                   <span className="file-input-text">
-                    {file ? `📄 ${file.name}` : "Choose a file to send"}
+                    {files.length === 0 ? "Choose files to send" : `${files.length} file(s) selected`}
                   </span>
                 </label>
               </div>
 
+              {files.length > 0 && (
+                <div className="files-list">
+                  <p className="files-list-title">Selected Files:</p>
+                  {files.map((file, index) => (
+                    <div key={index} className="file-item">
+                      <span className="file-item-name">📄 {file.name}</span>
+                      <span className="file-item-size">({(file.size / (1024 * 1024)).toFixed(2)} MB)</span>
+                      <button
+                        className="btn-delete-file"
+                        onClick={() => deleteFile(index)}
+                        title="Delete this file"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 5 6 21 6"></polyline>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                          <line x1="10" y1="11" x2="10" y2="17"></line>
+                          <line x1="14" y1="11" x2="14" y2="17"></line>
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                  <div className="files-total-size">
+                    Total: {(files.reduce((sum, f) => sum + f.size, 0) / (1024 * 1024)).toFixed(2)} MB
+                  </div>
+                </div>
+              )}
+
               {error && <div className="error-message">{error}</div>}
 
-              {status === "connected" && file && (
+              {status === "connected" && files.length > 0 && (
                 <div className="auto-send-message">
-                  ✓ File will be sent automatically when receiver connects
+                  ✓ Files will be zipped and sent automatically when receiver connects
                 </div>
               )}
 
