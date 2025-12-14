@@ -111,6 +111,9 @@ function setupReceive(dc, onFileReceived, onProgress) {
     if (typeof event.data === "string") {
       meta = JSON.parse(event.data);
       console.log("📦 Receiving file:", meta.filename);
+      if (onProgress) {
+        onProgress(0, 0, meta.size);
+      }
       return;
     }
 

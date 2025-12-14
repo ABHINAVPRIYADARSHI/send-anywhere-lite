@@ -39,6 +39,8 @@ export default function App() {
   const [timeoutId, setTimeoutId] = useState(null);
   const [isReadyToSend, setIsReadyToSend] = useState(false);
   const [toast, setToast] = useState(null);
+  const [timeRemaining, setTimeRemaining] = useState(0);
+  const [timerIntervalId, setTimerIntervalId] = useState(null);
 
   function generateCode() {
     return Math.floor(100000 + Math.random() * 900000).toString();
@@ -62,6 +64,7 @@ export default function App() {
     setProgress(0);
     setTransferredBytes(0);
     setTotalBytes(0);
+    setTimeRemaining(5 * 60);
 
     const socket = initSignaling();
 
@@ -75,6 +78,8 @@ export default function App() {
         console.log("🟢 Sender channel ready");
         setStatus("connected");
         if (timeoutId) clearTimeout(timeoutId);
+        if (timerIntervalId) clearInterval(timerIntervalId);
+        setTimeRemaining(0);
         setIsReadyToSend(true);
       }
     );
@@ -86,9 +91,22 @@ export default function App() {
       setStatus("timeout");
       rtcObj.pc.close();
       socket.disconnect();
+      if (timerIntervalId) clearInterval(timerIntervalId);
     }, 5 * 60 * 1000);
 
     setTimeoutId(timeout);
+
+    const intervalId = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev <= 1) {
+          clearInterval(intervalId);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    setTimerIntervalId(intervalId);
   }
 
   async function performFileSend(fileToSend, rtcObj) {
@@ -201,6 +219,7 @@ export default function App() {
 
   function handleReset() {
     if (timeoutId) clearTimeout(timeoutId);
+    if (timerIntervalId) clearInterval(timerIntervalId);
     setMode(null);
     setCode("");
     setFile(null);
@@ -210,6 +229,7 @@ export default function App() {
     setTransferredBytes(0);
     setTotalBytes(0);
     setIsReadyToSend(false);
+    setTimeRemaining(0);
   }
 
   return (
@@ -255,6 +275,11 @@ export default function App() {
                 }}>
                   Copy Code
                 </button>
+                {timeRemaining > 0 && (
+                  <div className="timer-display">
+                    ⏱️ Code expires in {Math.floor(timeRemaining / 60)}:{String(timeRemaining % 60).padStart(2, '0')}
+                  </div>
+                )}
               </div>
 
               <div className="file-section">
@@ -341,18 +366,16 @@ export default function App() {
                   <span className="status-label">Status:</span>
                   <span className="status-value">{statusMessages[status]}</span>
                 </div>
-                {(status === "receiving" || status === "connecting" || (status === "received" && progress > 0)) && (
+                {totalBytes > 0 && (
                   <div className="progress-container">
                     <div className="progress-bar">
                       <div className="progress-fill" style={{ width: `${progress}%` }}></div>
                     </div>
                     <div className="progress-details">
                       <span className="progress-text">{Math.round(progress)}%</span>
-                      {totalBytes > 0 && (
-                        <span className="progress-bytes">
-                          {(transferredBytes / (1024 * 1024)).toFixed(2)} MB / {(totalBytes / (1024 * 1024)).toFixed(2)} MB
-                        </span>
-                      )}
+                      <span className="progress-bytes">
+                        {(transferredBytes / (1024 * 1024)).toFixed(2)} MB / {(totalBytes / (1024 * 1024)).toFixed(2)} MB
+                      </span>
                     </div>
                   </div>
                 )}
