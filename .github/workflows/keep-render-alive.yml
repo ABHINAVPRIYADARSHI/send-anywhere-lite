@@ -1,0 +1,16 @@
+name: Keep Render App Alive
+
+on:
+  schedule:
+    # Runs every 10 minutes
+    - cron: "*/13 * * * *"
+  workflow_dispatch:   # allows manual run from GitHub UI
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Ping Render health endpoint
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" https://send-anywhere-lite.onrender.com/health
