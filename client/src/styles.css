@@ -278,6 +278,32 @@ body {
   font-weight: 500;
 }
 
+.auto-send-message {
+  background: #f0fdf4;
+  color: #16a34a;
+  padding: 14px 16px;
+  border-radius: 8px;
+  margin-bottom: 25px;
+  border-left: 4px solid #16a34a;
+  font-weight: 500;
+  text-align: center;
+}
+
+.toast-notification {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  background: #16a34a;
+  color: white;
+  padding: 16px 24px;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  font-weight: 500;
+  font-size: 0.95rem;
+  animation: slideInRight 0.3s ease-out, slideOutRight 0.3s ease-out 2.7s forwards;
+  z-index: 1000;
+}
+
 .btn-send,
 .btn-receive {
   width: 100%;
@@ -415,6 +441,28 @@ body {
   }
 }
 
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+}
+
 /* Mobile Responsive */
 @media (max-width: 640px) {
   .app-wrapper {
@@ -482,5 +530,13 @@ body {
 
   .progress-bytes {
     font-size: 0.8rem;
+  }
+
+  .toast-notification {
+    bottom: 20px;
+    right: 20px;
+    left: 20px;
+    padding: 14px 20px;
+    font-size: 0.9rem;
   }
 }

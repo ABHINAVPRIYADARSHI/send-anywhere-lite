@@ -1,7 +1,9 @@
 import { io } from "socket.io-client";
 
-export function initSignaling() {
-  const socket = io("http://localhost:5000");
+export const SIGNALING_URL =
+  import.meta.env.VITE_SIGNALING_URL || "http://localhost:5000";
 
-  return socket;
+export function initSignaling() {
+  return io(SIGNALING_URL);
 }
+

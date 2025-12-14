@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { initSignaling } from "./Signaling";
 import { createWebRTCConnection, sendFileOverRTC } from "./webrtc";
 
@@ -37,6 +37,8 @@ export default function App() {
   const [transferredBytes, setTransferredBytes] = useState(0);
   const [totalBytes, setTotalBytes] = useState(0);
   const [timeoutId, setTimeoutId] = useState(null);
+  const [isReadyToSend, setIsReadyToSend] = useState(false);
+  const [toast, setToast] = useState(null);
 
   function generateCode() {
     return Math.floor(100000 + Math.random() * 900000).toString();
@@ -44,6 +46,11 @@ export default function App() {
 
   function clearError() {
     setError("");
+  }
+
+  function showToast(message) {
+    setToast(message);
+    setTimeout(() => setToast(null), 3000);
   }
 
   async function startSend() {
@@ -68,6 +75,7 @@ export default function App() {
         console.log("🟢 Sender channel ready");
         setStatus("connected");
         if (timeoutId) clearTimeout(timeoutId);
+        setIsReadyToSend(true);
       }
     );
 
@@ -83,6 +91,39 @@ export default function App() {
     setTimeoutId(timeout);
   }
 
+  async function performFileSend(fileToSend, rtcObj) {
+    if (!fileToSend || !rtcObj) {
+      return;
+    }
+
+    const dc = rtcObj.getDataChannel();
+
+    if (!dc) {
+      return;
+    }
+
+    setTotalBytes(fileToSend.size);
+    setTransferredBytes(0);
+
+    const progressCallback = (percentComplete, bytesTransferred) => {
+      setProgress(percentComplete);
+      setTransferredBytes(bytesTransferred);
+    };
+
+    if (dc.readyState !== "open") {
+      setStatus("waiting-for-connection");
+      dc.onopen = async () => {
+        setStatus("sending");
+        await sendFileOverRTC(fileToSend, dc, progressCallback);
+        setStatus("sent");
+      };
+    } else {
+      setStatus("sending");
+      await sendFileOverRTC(fileToSend, dc, progressCallback);
+      setStatus("sent");
+    }
+  }
+
   async function sendFile() {
     clearError();
     if (!file) {
@@ -95,33 +136,7 @@ export default function App() {
       return;
     }
 
-    const dc = rtc.getDataChannel();
-
-    if (!dc) {
-      setError("DataChannel not ready yet");
-      return;
-    }
-
-    setTotalBytes(file.size);
-    setTransferredBytes(0);
-
-    const progressCallback = (percentComplete, bytesTransferred) => {
-      setProgress(percentComplete);
-      setTransferredBytes(bytesTransferred);
-    };
-
-    if (dc.readyState !== "open") {
-      setStatus("waiting-for-connection");
-      dc.onopen = async () => {
-        setStatus("sending");
-        await sendFileOverRTC(file, dc, progressCallback);
-        setStatus("sent");
-      };
-    } else {
-      setStatus("sending");
-      await sendFileOverRTC(file, dc, progressCallback);
-      setStatus("sent");
-    }
+    await performFileSend(file, rtc);
   }
 
   async function startReceive() {
@@ -177,6 +192,13 @@ export default function App() {
     setTimeoutId(timeout);
   }
 
+  useEffect(() => {
+    if (isReadyToSend && file && rtc && mode === "send") {
+      performFileSend(file, rtc);
+      setIsReadyToSend(false);
+    }
+  }, [isReadyToSend, file, rtc, mode]);
+
   function handleReset() {
     if (timeoutId) clearTimeout(timeoutId);
     setMode(null);
@@ -187,6 +209,7 @@ export default function App() {
     setError("");
     setTransferredBytes(0);
     setTotalBytes(0);
+    setIsReadyToSend(false);
   }
 
   return (
@@ -228,7 +251,7 @@ export default function App() {
                 <div className="code-display">{code}</div>
                 <button className="btn-copy" onClick={() => {
                   navigator.clipboard.writeText(code);
-                  alert("Code copied to clipboard!");
+                  showToast("Code copied");
                 }}>
                   Copy Code
                 </button>
@@ -252,13 +275,11 @@ export default function App() {
 
               {error && <div className="error-message">{error}</div>}
 
-              <button 
-                className="btn btn-send" 
-                onClick={sendFile}
-                disabled={!file || status === "sending"}
-              >
-                {status === "sending" ? "Sending..." : "Send File"}
-              </button>
+              {status === "connected" && file && (
+                <div className="auto-send-message">
+                  ✓ File will be sent automatically when receiver connects
+                </div>
+              )}
 
               <div className="status-section">
                 <div className="status-item">
@@ -320,7 +341,7 @@ export default function App() {
                   <span className="status-label">Status:</span>
                   <span className="status-value">{statusMessages[status]}</span>
                 </div>
-                {(status === "receiving" || status === "connecting") && (
+                {(status === "receiving" || status === "connecting" || (status === "received" && progress > 0)) && (
                   <div className="progress-container">
                     <div className="progress-bar">
                       <div className="progress-fill" style={{ width: `${progress}%` }}></div>
@@ -340,6 +361,11 @@ export default function App() {
           </div>
         )}
       </div>
+      {toast && (
+        <div className="toast-notification">
+          {toast}
+        </div>
+      )}
     </div>
   );
 }
