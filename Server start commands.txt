@@ -1,0 +1,18 @@
+For Local development
+=========================
+1. First start node.js signalling server
+	D:\GST apps\send-anywhere-lite\server> node .\server.js  
+
+2. Secondly, start the frontend with npm command
+	D:\GST apps\send-anywhere-lite\client> npm run dev
+
+
+==============================
+For remote deployment
+==============================
+1. Commit your code and push to GitHub. It auto deploys frontend on Vercel and backend on Render.
+	frontend: https://send-anywhere-lite.vercel.app/
+	backend: https://send-anywhere-lite.onrender.com
+
+2. Since, Render auto sleeps the backend signalling server post 15 minutes of activity, I have added 
+a GitHub action to ping "https://send-anywhere-lite.onrender.com/health" every 13 minutes to keep the app alive.

@@ -276,7 +276,7 @@ export default function App() {
       <div className="container">
         <div className="header">
           <div className="header-content">
-            <h1 className="app-title">📤 Send Anywhere Lite</h1>
+            <h1 className="app-title">📤 Send Everywhere Lite</h1>
             <p className="app-subtitle">Fast & secure file transfer</p>
           </div>
         </div>
